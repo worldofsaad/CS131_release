@@ -20,7 +20,7 @@ def load(image_path):
 
     ### YOUR CODE HERE
     # Use skimage io.imread
-    pass
+    out = io.imread(image_path)
     ### END YOUR CODE
 
     # Let's convert the image to be between the correct range.
@@ -45,7 +45,7 @@ def dim_image(image):
     out = None
 
     ### YOUR CODE HERE
-    pass
+    out = 0.5 * (image **2)
     ### END YOUR CODE
 
     return out
@@ -66,7 +66,7 @@ def convert_to_grey_scale(image):
     out = None
 
     ### YOUR CODE HERE
-    pass
+    out = color.rgb2grey(image)
     ### END YOUR CODE
 
     return out
@@ -86,7 +86,13 @@ def rgb_exclusion(image, channel):
     out = None
 
     ### YOUR CODE HERE
-    pass
+    index_help = ['R','G','B']
+    
+    mat=np.array([[0,1,1],[1,0,1],[1,1,0]])
+    out = image * mat[index_help.index(channel)]
+    
+
+    
     ### END YOUR CODE
 
     return out
@@ -107,7 +113,13 @@ def lab_decomposition(image, channel):
     out = None
 
     ### YOUR CODE HERE
-    pass
+    id_help=["L","A","B"]
+    """
+    #if you want to include other channels but with just 0 values
+    mat=np.array([[0,1,1],[1,0,1],[1,1,0]])
+    out = lab * mat[index_help.index(channel)] 
+    """
+    out = lab[:,:,id_help.index(channel)] #this is will return just the channel specified excluding other channels completely
     ### END YOUR CODE
 
     return out
@@ -128,7 +140,14 @@ def hsv_decomposition(image, channel='H'):
     out = None
 
     ### YOUR CODE HERE
-    pass
+    id_help=["H", "S" , "V"]
+    """
+    #if you want to include other channels but with just 0 values
+    mat = np.array([[1,0,0],[0,1,0],[0,0,1]], dtype=np.float32)
+    out = hsv * mat[id_help.index(channel)]
+    """
+    out = hsv[:,:,id_help.index(channel)]
+
     ### END YOUR CODE
 
     return out
@@ -154,7 +173,14 @@ def mix_images(image1, image2, channel1, channel2):
 
     out = None
     ### YOUR CODE HERE
-    pass
+    image1 = rgb_exclusion(image1,channel1)
+    image2 = rgb_exclusion(image2,channel2)
+
+    image1 = image1[:,:150,:]
+    image2 = image2[:,150:,:]
+    
+    out = np.concatenate((image1,image2),axis=1)
+    
     ### END YOUR CODE
 
     return out
@@ -183,7 +209,21 @@ def mix_quadrants(image):
     out = None
 
     ### YOUR CODE HERE
-    pass
+    TopLeft  = image[:150,:150,:]
+    TopRight = image[:150,150:,:]
+    BottomLeft = image[150:,:150,:]
+    BottomRight = image[150:,150:,:]
+
+    TopLeft = rgb_exclusion(TopLeft,'R')
+    TopRight = dim_image(TopRight)
+    BottomLeft = BottomLeft**0.5
+    BottomRight = rgb_exclusion(BottomRight,'R')
+
+    Top = np.concatenate((TopLeft,TopRight),axis=1)
+    Bottom = np.concatenate((BottomLeft,BottomRight),axis=1)
+
+    out = np.concatenate((Top,Bottom))
+
     ### END YOUR CODE
 
     return out
