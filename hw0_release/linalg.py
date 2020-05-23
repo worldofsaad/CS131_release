@@ -16,7 +16,7 @@ def dot_product(a, b):
     """
     out = None
     ### YOUR CODE HERE
-    pass
+    out = np.dot(a,b)
     ### END YOUR CODE
     return out
 
@@ -37,7 +37,15 @@ def complicated_matrix_function(M, a, b):
     """
     out = None
     ### YOUR CODE HERE
-    pass
+    M = np.squeeze(np.asarray(M))
+    a = np.squeeze(np.asarray(a))
+    b = np.squeeze(np.asarray(b))
+
+    out1 = np.dot(a.T,b)
+    out2 = np.dot(M,a.T)
+    out = np.dot(out1,out2)
+    i = out.shape[0]
+    out = out.reshape(i,1)
     ### END YOUR CODE
 
     return out
@@ -61,7 +69,7 @@ def svd(M):
     s = None
     v = None
     ### YOUR CODE HERE
-    pass
+    u,s,v = np.linalg.svd(M)
     ### END YOUR CODE
 
     return u, s, v
@@ -82,7 +90,8 @@ def get_singular_values(M, k):
     """
     singular_values = None
     ### YOUR CODE HERE
-    pass
+    _,s,__ = svd(M)
+    singular_values = s[:n]
     ### END YOUR CODE
     return singular_values
 
@@ -124,9 +133,15 @@ def get_eigen_values_and_vectors(M, k):
         eigenvectors: list of length k containing the top k eigenvectors
             of shape (m,)
     """
-    eigenvalues = []
-    eigenvectors = []
     ### YOUR CODE HERE
-    pass
+    w,v = eig(M)
+
+    args = np.argsort(abs(w))
+    args = args[::-1][:n]
+    w = w[args]
+
+    args = np.argsort(abs(v))
+    args = args[::-1][:n]
+    v = v[args]
     ### END YOUR CODE
-    return eigenvalues, eigenvectors
+    return w, v
