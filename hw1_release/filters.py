@@ -29,10 +29,26 @@ def conv_nested(image, kernel):
     out = np.zeros((Hi, Wi))
 
     ### YOUR CODE HERE
-    pass
+    for i1 in range(Hi):
+      for i2 in range(Wi):
+        sum_ = 0
+
+        for k1 in range(Hk):
+          for k2 in range(Wk):
+            
+            a = i1+1-k1
+            b = i2+1-k2
+            if a < 0 or b < 0 or a >= Hi or b >=Wi:
+              sum_ += 0
+            else:
+              sum_ += kernel[k1,k2] * image[a,b]
+        
+        out[i1,i2]=sum_
+
     ### END YOUR CODE
 
     return out
+
 
 def zero_pad(image, pad_height, pad_width):
     """ Zero-pad an image.
@@ -56,7 +72,8 @@ def zero_pad(image, pad_height, pad_width):
     out = None
 
     ### YOUR CODE HERE
-    pass
+    out = np.zeros((H+2*pad_height, W+2*pad_width))
+    out[pad_height:pad_height+H,pad_width:pad_width+W]=image
     ### END YOUR CODE
     return out
 
@@ -83,31 +100,43 @@ def conv_fast(image, kernel):
     Hi, Wi = image.shape
     Hk, Wk = kernel.shape
     out = np.zeros((Hi, Wi))
+    kernel = np.flip(np.flip(kernel,0),1)
 
     ### YOUR CODE HERE
-    pass
+    image = zero_pad(image,Hk//2,Wk//2)
+    for i in range(Hi):
+      for j in range(Wi):
+        out[i,j] = np.sum(image[i:Hk+i , j:Wk+j] * kernel)
     ### END YOUR CODE
 
     return out
 
+
 def conv_faster(image, kernel):
     """
     Args:
-        image: numpy array of shape (Hi, Wi).
-        kernel: numpy array of shape (Hk, Wk).
-
+        image: numpy array of shape (Hi, Wi)
+        kernel: numpy array of shape (Hk, Wk)
     Returns:
-        out: numpy array of shape (Hi, Wi).
+        out: numpy array of shape (Hi, Wi)
     """
     Hi, Wi = image.shape
     Hk, Wk = kernel.shape
     out = np.zeros((Hi, Wi))
 
     ### YOUR CODE HERE
-    pass
+    image = zero_pad(image,Hk//2,Wk//2)
+    kernel = np.flip(np.flip(kernel,0),1)
+    mat = np.zeros((Hi*Wi,Hk*Wk))
+    for i in range(Hi*Wi):
+      row = i//Wi
+      col = i%Wi
+      mat[i,:]=image[row:Hk+row,col:Wk+col].reshape(1,Hk*Wk)
+    out = mat.dot(kernel.reshape((Hk*Wk),1)).reshape(Hi, Wi)
     ### END YOUR CODE
 
     return out
+
 
 def cross_correlation(f, g):
     """ Cross-correlation of f and g.
@@ -124,10 +153,12 @@ def cross_correlation(f, g):
 
     out = None
     ### YOUR CODE HERE
-    pass
+    g = np.flip(np.flip(g,0),1)
+    out = conv_faster(f,g)
     ### END YOUR CODE
 
     return out
+
 
 def zero_mean_cross_correlation(f, g):
     """ Zero-mean cross-correlation of f and g.
@@ -146,7 +177,41 @@ def zero_mean_cross_correlation(f, g):
 
     out = None
     ### YOUR CODE HERE
-    pass
+    g=np.flip(np.flip(g,0),1)
+    g = g - np.mean(g)
+    out = conv_faster(f,g)
+    ### END YOUR CODE
+
+    return out
+
+
+
+def conv_faster_normal(image, kernel):
+    """
+    Args:
+        image: numpy array of shape (Hi, Wi)
+        kernel: numpy array of shape (Hk, Wk)
+    Returns:
+        out: numpy array of shape (Hi, Wi)
+    """
+    Hi, Wi = image.shape
+    Hk, Wk = kernel.shape
+    out = np.zeros((Hi, Wi))
+
+    ### YOUR CODE HERE
+    image = zero_pad(image,Hk//2,Wk//2)
+    kernel = np.flip(np.flip(kernel,0),1)
+    mat = np.zeros((Hi*Wi,Hk*Wk))
+    for i in range(Hi*Wi):
+      row = i//Wi
+      col = i%Wi
+      data = image[row:Hk+row,col:Wk+col].reshape(1,Hk*Wk)
+      data = (data-np.mean(data))/np.std(data)  #normalizing
+      mat[i,:]= data
+      
+    data = kernel.reshape((Hk*Wk),1)
+    data = (data-np.mean(data))/np.std(data) #normalizing
+    out = mat.dot(data).reshape(Hi, Wi)
     ### END YOUR CODE
 
     return out
@@ -170,7 +235,11 @@ def normalized_cross_correlation(f, g):
 
     out = None
     ### YOUR CODE HERE
-    pass
+    g = np.flip(np.flip(g,0),1)
+    out = conv_faster_normal(f,g)
     ### END YOUR CODE
 
     return out
+
+
+
