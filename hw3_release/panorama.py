@@ -14,7 +14,7 @@ from skimage.util.shape import view_as_blocks
 from scipy.spatial.distance import cdist
 from scipy.ndimage.filters import convolve
 
-from utils import pad, unpad, get_output_space, warp_image
+#from utils import pad, unpad, get_output_space, warp_image
 
 
 def harris_corners(img, window_size=3, k=0.04):
@@ -44,7 +44,17 @@ def harris_corners(img, window_size=3, k=0.04):
     dy = filters.sobel_h(img)
 
     ### YOUR CODE HERE
-    pass
+    A = convolve(dx*dx,window)
+    B = convolve(dy*dy,window)
+    C = convolve(dx*dy,window)
+
+    for i in range(H):
+      for j in range(W):
+        M = np.array([
+                      [A[i,j],C[i,j]],
+                      [C[i,j],B[i,j]]
+        ])
+        response[i,j] = np.linalg.det(M)-k* (np.trace(M)**2)
     ### END YOUR CODE
 
     return response
@@ -70,8 +80,17 @@ def simple_descriptor(patch):
     """
     feature = []
     ### YOUR CODE HERE
-    pass
+    mean = np.mean(patch)
+    std = np.std(patch)
+    
+    if std >0:
+      feature = (patch-mean)/std
+    else:
+      feature = patch-mean
+
+    feature = feature.reshape(-1)
     ### END YOUR CODE
+
     return feature
 
 
@@ -123,7 +142,11 @@ def match_descriptors(desc1, desc2, threshold=0.5):
     dists = cdist(desc1, desc2)
 
     ### YOUR CODE HERE
-    pass
+    for i in range(N):
+        dist = dists[i, :]
+        if np.min(dist) / (np.partition(dist, 2)[1]) <= threshold:
+            matches.append([i, np.argmin(dist)])
+    matches = np.array(matches).reshape(-1, 2)
     ### END YOUR CODE
 
     return matches
@@ -149,7 +172,7 @@ def fit_affine_matrix(p1, p2):
     p2 = pad(p2)
 
     ### YOUR CODE HERE
-    pass
+    H = np.linalg.lstsq(p2, p1, rcond=None)[0]
     ### END YOUR CODE
 
     # Sometimes numerical issues cause least-squares to produce the last
@@ -196,7 +219,21 @@ def ransac(keypoints1, keypoints2, matches, n_iters=200, threshold=20):
 
     # RANSAC iteration start
     ### YOUR CODE HERE
-    pass
+    for i in range(n_iters):
+        temp_max = np.zeros(N, dtype=np.int32)
+        temp_n = 0
+        idx = np.random.choice(N, n_samples, replace=False)
+        p1 = matched1[idx, :]
+        p2 = matched2[idx, :]
+        H = np.linalg.lstsq(p2, p1, rcond=None)[0]
+        H[:, 2] = np.array([0, 0, 1])
+        temp_max = np.linalg.norm(matched2.dot(H) - matched1, axis=1) ** 2 < threshold
+        temp_n = np.sum(temp_max)
+        if temp_n > n_inliers:
+            max_inliers = temp_max.copy()
+            n_inliers = temp_n
+    H = np.linalg.lstsq(matched2[max_inliers], matched1[max_inliers], rcond=None)[0]
+    H[:, 2] = np.array([0, 0, 1])
     ### END YOUR CODE
     print(H)
     return H, orig_matches[max_inliers]
@@ -248,7 +285,17 @@ def hog_descriptor(patch, pixels_per_cell=(8,8)):
 
     # Compute histogram per cell
     ### YOUR CODE HERE
-    pass
+    for i in range(rows):
+        for j in range(cols):
+            for m in range(G_cells.shape[2]):
+                for n in range(G_cells.shape[3]):
+                    idx = int(theta_cells[i, j, m, n] // degrees_per_bin)
+                    if idx == 9:
+                        idx = 8
+                    cells[i, j, idx] += G_cells[i, j, m, n]
+                    
+    cells = (cells - np.mean(cells)) / np.std(cells)
+    block = cells.reshape(-1)
     ### YOUR CODE HERE
 
     return block
